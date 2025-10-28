@@ -1,0 +1,29 @@
+digraph G {
+	rankdir=LR;
+
+	headers[shape="record",label="{<h>head = 2 | <t>tail = 2 | <f>free_head = 1}"];
+
+	data2[shape="record",label="{index = 2 | value = 42 | {prev = 0 | next = 0}}"];
+
+	free_head[shape="record",label="free head"];
+	free_data1[shape="record",label="{index = 1 | value = POISON | {prev = 0 | next = 3}}"];
+	free_data3[shape="record",label="{index = 3 | value = POISON | {prev = 0 | next = 4}}"];
+	free_data4[shape="record",label="{index = 4 | value = POISON | {prev = 0 | next = 5}}"];
+	free_data5[shape="record",label="{index = 5 | value = POISON | {prev = 0 | next = 6}}"];
+	free_data6[shape="record",label="{index = 6 | value = POISON | {prev = 0 | next = 7}}"];
+	free_data7[shape="record",label="{index = 7 | value = POISON | {prev = 0 | next = -1}}"];
+
+	headers:h -> data2[label="head"];
+	headers:t -> data2[label="tail"];
+	headers:f -> data1[label="free head"];
+
+
+
+	free_head->free_data1;
+	data1->data3;
+	data3->data4;
+	data4->data5;
+	data5->data6;
+	data6->data7;
+
+}
