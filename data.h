@@ -4,7 +4,6 @@
 
 const int END_OF_MEMORY = -1;
 const int START_CAPACITY = 8;
-const int BUFFER_SIZE = 256;
 
 
 #ifdef DEBUG
@@ -13,9 +12,9 @@ const int BUFFER_SIZE = 256;
                         {#name, __FILE__, __func__, __LINE__}};
 
 
-#define LIST_DUMP(name, number)                              \
-    do {                                                     \
-        listDump(name, number, __FILE__, __func__, __LINE__);\
+#define LIST_DUMP(name)                                    \
+    do {                                                   \
+        listDump(name, __FILE__, __func__, __LINE__);      \
     } while (0)
  
 #endif // DEBUG
@@ -66,7 +65,7 @@ typedef struct {
     const char* source_file;
     const char* function_name;
     int line_number;
-    int file_number;
+    int dump_counter;
 } DumpInfo;
 #endif // DEBUG
 

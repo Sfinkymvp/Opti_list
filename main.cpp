@@ -15,21 +15,21 @@ int main()
 #endif // DEBUG
 
     CHECK_OR_RETURN(listConstructor(&list), &list);
-    LIST_DUMP(&list, 1);
+    LIST_DUMP(&list);
     CHECK_OR_RETURN(listInsertBefore(&list, 1, 52), &list);
-    LIST_DUMP(&list, 2);
+    LIST_DUMP(&list);
     CHECK_OR_RETURN(listInsertBefore(&list, 2, 42), &list);
-    LIST_DUMP(&list, 3);
+    LIST_DUMP(&list);
     CHECK_OR_RETURN(listInsertBefore(&list, 2, 11), &list);
-    LIST_DUMP(&list, 4);
+    LIST_DUMP(&list);
     CHECK_OR_RETURN(listInsertBefore(&list, 2, 121), &list);
-    LIST_DUMP(&list, 5);
+    LIST_DUMP(&list);
     CHECK_OR_RETURN(listInsertBefore(&list, 1, 228), &list);
-    LIST_DUMP(&list, 6);
+    LIST_DUMP(&list);
     CHECK_OR_RETURN(listInsertBefore(&list, 1, 228), &list);
-    LIST_DUMP(&list, 7);
+    LIST_DUMP(&list);
     CHECK_OR_RETURN(listDelete(&list, 1), &list);
-    LIST_DUMP(&list, 8);
+    LIST_DUMP(&list);
 
     listDestructor(&list);
     return 0;
