@@ -19,10 +19,10 @@ static void initializeFreeNodes(List* list, int start_index, int last_index)
 #else 
         list->storage[index].value = 0;
 #endif // DEBUG
-        list->storage[index].prev = END_OF_MEMORY;
+        list->storage[index].prev = EMPTY;
     }
 
-    list->storage[last_index - 1].next = END_OF_MEMORY;
+    list->storage[last_index - 1].next = EMPTY;
 }
 
 
@@ -32,7 +32,7 @@ static bool isNodeFree(List* list, int index)
     assert(list->storage != NULL);
     assert(index >= 0 && index < list->capacity);
 
-    return list->storage[index].prev == END_OF_MEMORY;
+    return list->storage[index].prev == EMPTY;
 }
 
 
@@ -45,12 +45,56 @@ static bool isValidIndex(List* list, int index)
 }
 
 
-ListStatus listInsertBefore(List* list, int index, DataType value)
+static ListStatus listVerify(List* list)
 {
     assert(list != NULL);
     assert(list->storage != NULL);
 
-    CHECK_STATUS(listExpand(list));
+    if (list->capacity <= 0)
+        return LIST_CORRUPTED;
+    if (list->free_head != EMPTY && list->free_head < 0 || list->free_head >= list->capacity)
+        return LIST_CORRUPTED;
+    if (list->storage[0].value != LIST_FICTIVE_VALUE)
+        return LIST_CORRUPTED;
+    
+    for (int index = list->storage[0].next; index != 0; index = list->storage[index].next) {
+        if (index < 0 || index >= list->capacity)
+            return LIST_CORRUPTED;
+        if (isNodeFree(list, index))
+            return LIST_CORRUPTED;
+        if (list->storage[index].prev < 0 && list->storage[index].prev != EMPTY
+            || list->storage[index].prev >= list->capacity)
+            return LIST_CORRUPTED;
+        if (list->storage[index].next < 0 && list->storage[index].next != EMPTY
+            || list->storage[index].next >= list->capacity)
+            return LIST_CORRUPTED;
+        if (list->storage[list->storage[index].next].prev != index)
+            return LIST_CORRUPTED;
+    }
+
+    for (int index = list->free_head; index != EMPTY; index = list->storage[index].next) {
+        if (index < 0 || index >= list->capacity)
+            return LIST_CORRUPTED;
+        if (!isNodeFree(list, index))
+            return LIST_CORRUPTED;
+        if (list->storage[index].prev < 0 && list->storage[index].prev != EMPTY
+            || list->storage[index].prev >= list->capacity)
+            return LIST_CORRUPTED;
+        if (list->storage[index].next < 0 && list->storage[index].next != EMPTY
+            || list->storage[index].next >= list->capacity)
+            return LIST_CORRUPTED;
+        if (list->storage[index].value != LIST_POISON_VALUE ||
+            list->storage[index].prev != EMPTY)
+            return LIST_CORRUPTED;
+    }
+   
+    return LIST_OK;
+}
+
+
+ListStatus listInsertBefore(List* list, int index, DataType value)
+{
+    CHECK_STATUS(listVerify(list));
 
     if (!isValidIndex(list, index - 1))
         return LIST_INVALID_INDEX;
@@ -66,16 +110,17 @@ ListStatus listInsertBefore(List* list, int index, DataType value)
     list->storage[index - 1].next = new_index;
     list->storage[new_index].prev = index - 1;
 
+    CHECK_STATUS(listExpand(list));
+
+    CHECK_STATUS(listVerify(list));
+
     return LIST_OK;    
 }
 
 
 ListStatus listInsertAfter(List* list, int index, DataType value)
 {
-    assert(list != NULL);
-    assert(list->storage != NULL);
-
-    CHECK_STATUS(listExpand(list));
+    CHECK_STATUS(listVerify(list));
 
     if (!isValidIndex(list, index))
         return LIST_INVALID_INDEX;
@@ -91,14 +136,17 @@ ListStatus listInsertAfter(List* list, int index, DataType value)
     list->storage[index].next = new_index;
     list->storage[new_index].prev = index;
 
+    CHECK_STATUS(listExpand(list));
+
+    CHECK_STATUS(listVerify(list));
+
     return LIST_OK;    
 }
 
 
 ListStatus listDelete(List* list, int index)
 {
-    assert(list != NULL);
-    assert(list->storage != NULL);
+    CHECK_STATUS(listVerify(list));
 
     if (!isValidIndex(list, index) || index == 0)
         return LIST_INVALID_INDEX;
@@ -111,9 +159,11 @@ ListStatus listDelete(List* list, int index)
     list->storage[list->storage[index].next].prev = list->storage[index].prev;
     list->storage[list->storage[index].prev].next = list->storage[index].next;
 
-    list->storage[index].prev = END_OF_MEMORY;
+    list->storage[index].prev = EMPTY;
     list->storage[index].next = list->free_head;
     list->free_head = index;
+
+    CHECK_STATUS(listVerify(list));
 
     return LIST_OK;  
 }
@@ -121,12 +171,11 @@ ListStatus listDelete(List* list, int index)
 
 ListStatus listExpand(List* list)
 {
-    assert(list != NULL);
-    assert(list->storage != NULL);
+    CHECK_STATUS(listVerify(list));
 
-    if (list->free_head != END_OF_MEMORY)
+    if (list->free_head != EMPTY)
         return LIST_OK;
-
+    
     void* temp = realloc(list->storage, 2 * list->capacity * sizeof(Node));
     if (temp == NULL)
         return LIST_OUT_OF_MEMORY;
@@ -136,7 +185,9 @@ ListStatus listExpand(List* list)
     list->capacity *= 2;
 
     initializeFreeNodes(list, list->capacity / 2, list->capacity);
-
+    
+    CHECK_STATUS(listVerify(list));
+    
     return LIST_OK;
 }
 
@@ -153,10 +204,12 @@ ListStatus listConstructor(List* list)
     list->capacity = START_CAPACITY;
     list->free_head = 1;
 
-    list->storage[0].value = LIST_DUMMY_VALUE;
+    list->storage[0].value = LIST_FICTIVE_VALUE;
     list->storage[0].prev = 0;
     list->storage[0].next = 0;
     initializeFreeNodes(list, list->free_head, list->capacity);
+
+    CHECK_STATUS(listVerify(list));
 
     return LIST_OK;   
 }
@@ -169,6 +222,6 @@ void listDestructor(List* list)
     free(list->storage);
     list->storage = NULL;
     list->capacity = 0;
-    list->free_head = END_OF_MEMORY;
+    list->free_head = EMPTY;
 }
 

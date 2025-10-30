@@ -2,8 +2,8 @@
 #define _DATA_H_
 
 
-const int END_OF_MEMORY = -1;
-const int START_CAPACITY = 8;
+const int EMPTY = -1;
+const int START_CAPACITY = 4;
 
 
 #ifdef DEBUG
@@ -41,6 +41,7 @@ const int START_CAPACITY = 8;
 
 typedef enum {
     LIST_OK = 0,
+    LIST_CORRUPTED,
     LIST_INVALID_INDEX,
     LIST_OUT_OF_MEMORY
 } ListStatus;
@@ -49,7 +50,7 @@ typedef enum {
 typedef int DataType;
 #define DATATYPE_SPEC "%d"
 const DataType LIST_POISON_VALUE = 0xABADBABE;
-const DataType LIST_DUMMY_VALUE = 0xAB0BA228;
+const DataType LIST_FICTIVE_VALUE = 0xAB0BA228;
 
 
 #ifdef DEBUG
