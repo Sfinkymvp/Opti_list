@@ -41,6 +41,7 @@ int main()
     LIST_DUMP(&list);
     CHECK_OR_RETURN(listInsertBefore(&list, 6, 322), &list);
     LIST_DUMP(&list);
+    list.storage[3].next = 1;
     list.storage[6].prev = -666;
     LIST_DUMP(&list);
 

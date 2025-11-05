@@ -114,6 +114,7 @@ ListStatus listInsertBefore(List* list, int index, DataType value)
 
     CHECK_STATUS(listVerify(list));
 
+    list->size++;
     return LIST_OK;    
 }
 
@@ -140,6 +141,7 @@ ListStatus listInsertAfter(List* list, int index, DataType value)
 
     CHECK_STATUS(listVerify(list));
 
+    list->size++;
     return LIST_OK;    
 }
 
@@ -165,6 +167,7 @@ ListStatus listDelete(List* list, int index)
 
     CHECK_STATUS(listVerify(list));
 
+    list->size--;
     return LIST_OK;  
 }
 
@@ -192,6 +195,32 @@ ListStatus listExpand(List* list)
 }
 
 
+#ifdef DEBUG
+static ListStatus openGraphDumpFile(List* list)
+{
+    assert(list != NULL);
+
+    snprintf(list->debug_info.dump.directory, BUFFER_SIZE, "%s/list_dump_%03d",
+             IMAGE_DIRECTORY, list->debug_info.dump.dump_counter);
+
+    char command[BUFFER_SIZE * 3] = {};
+    snprintf(command, BUFFER_SIZE * 3, "rm -rf %s && mkdir -p %s",
+             list->debug_info.dump.directory, list->debug_info.dump.directory);
+    system(command);
+
+    char filename[BUFFER_SIZE * 2] = {};
+    snprintf(filename, BUFFER_SIZE * 2, "%s/list_dump_%03d.html",
+             list->debug_info.dump.directory, list->debug_info.dump.dump_counter);
+
+    list->debug_info.dump.file = fopen(filename, "w");
+    if (list->debug_info.dump.file == NULL)
+        return LIST_ERR_FILE_OPEN;
+
+    return LIST_OK;
+}
+#endif // DEBUG
+
+
 ListStatus listConstructor(List* list)
 {
     assert(list != NULL);
@@ -200,6 +229,14 @@ ListStatus listConstructor(List* list)
     if (temp == NULL)
         return LIST_OUT_OF_MEMORY;
 
+#ifdef DEBUG
+    static int dump_counter = 1;
+    list->debug_info.dump.dump_counter = dump_counter;
+    dump_counter++;
+
+    CHECK_STATUS(openGraphDumpFile(list));
+#endif // DEBUG
+
     list->storage = (Node*)temp;
     list->capacity = START_CAPACITY;
     list->free_head = 1;
@@ -207,6 +244,7 @@ ListStatus listConstructor(List* list)
     list->storage[0].value = LIST_FICTIVE_VALUE;
     list->storage[0].prev = 0;
     list->storage[0].next = 0;
+    list->size = 0;
     initializeFreeNodes(list, list->free_head, list->capacity);
 
     CHECK_STATUS(listVerify(list));
@@ -218,10 +256,13 @@ ListStatus listConstructor(List* list)
 void listDestructor(List* list)
 {
     assert(list != NULL);
-    
+   
+#ifdef DEBUG
+    fclose(list->debug_info.dump.file);
+#endif // DEBUG
+
     free(list->storage);
     list->storage = NULL;
     list->capacity = 0;
     list->free_head = EMPTY;
 }
-

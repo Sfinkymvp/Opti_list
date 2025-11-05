@@ -67,15 +67,18 @@ static void connectNodes(List* list, FILE* graph_out)
         fprintf(graph_out, "\tnode_%d->node_%d;\n", index, index + 1);
     fprintf(graph_out, "\tedge[style=\"solid\",constraint=false]\n");
  
-    fprintf(graph_out, "\t{rank=same;head->node_%d[color=\"#01579B\"];}\n", list->storage[0].next);
-    fprintf(graph_out, "\t{rank=same;tail->node_%d[color=red4];}\n", list->storage[0].prev);
-    fprintf(graph_out, "\t{rank=same;free_head->node_%d[color=\"#2E7D32\"];}\n", list->free_head);
+    fprintf(graph_out, "\t{rank=same;head->node_%d[color=black];}\n", list->storage[0].next);
+    fprintf(graph_out, "\t{rank=same;tail->node_%d[color=black];}\n", list->storage[0].prev);
+    fprintf(graph_out, "\t{rank=same;free_head->node_%d[color=black];}\n", list->free_head);
 
     int error_index = 1000;
+
     for (int index = list->storage[0].next, count = 0; !(count >= list->capacity ||
          index < 0 || index >= list->capacity) && list->storage[index].next != 0;
          index = list->storage[index].next, count++) {
-        if (list->storage[index].next < 0 || list->storage[index].next >= list->capacity) {
+        if (index == 0)
+            continue;
+        if (list->storage[index].prev < 0 || list->storage[index].prev >= list->capacity) {
             fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
                                "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
                                error_index, list->storage[index].next);
@@ -136,7 +139,7 @@ static void generateGraph(List* list, const char* dot_file)
 
     fprintf(graph_out, "digraph G {\n");
     fprintf(graph_out, "\trankdir=LR\n");
-    fprintf(graph_out, "\tsplines=\"ortho\"\n");
+    fprintf(graph_out, "\tsplines=ortho\n");
 
     generateNodes(list, graph_out);
 
@@ -161,119 +164,119 @@ static void convertDotToSvg(const char* dot_file, const char* svg_file)
 }
 
 
-static void writeListInfo(List* list, DumpInfo* info, FILE* list_out)
+static void writeListInfo(List* list, DumpInfo* info)
 {
     assert(list != NULL);
     assert(info != NULL);
-    assert(info->source_file != NULL);
-    assert(info->function_name != NULL);
-    assert(list_out != NULL);
+    assert(info->file != NULL);
+    assert(info->function != NULL);
+    assert(list->debug_info.dump.file != NULL);
 
-    fprintf(list_out, "\t<h2>LIST DUMP #%03d</h2>\n", info->dump_counter);
-    fprintf(list_out, "\t<h3>Dump {%s:%d} called from %s()</h3>\n",
-            info->source_file, info->line_number, info->function_name);
-    fprintf(list_out, "\t<h3>List \"%s\" {%s:%d} created in %s()</h3>\n",
-            list->debug_info.list_name, list->debug_info.source_file, 
-            list->debug_info.line_number, list->debug_info.function_name);
+    fprintf(list->debug_info.dump.file, "\t<h1>LIST DUMP #%03d</h1>\n", list->debug_info.dump.image_counter);
+    fprintf(list->debug_info.dump.file, "\t<h2>Dump {%s:%d} called from %s()</h2>\n",
+            info->file, info->line, info->function);
+    fprintf(list->debug_info.dump.file, "\t<h2>List \"%s\" {%s:%d} created in %s()</h2>\n",
+            list->debug_info.creation.list_name, list->debug_info.creation.file, 
+            list->debug_info.creation.line, list->debug_info.creation.function);
 }
 
 
-static void writeListData(List* list, FILE* list_out)
+static void writeListData(List* list)
 {
     assert(list != NULL);
     assert(list->storage != NULL);
-    assert(list_out != NULL);
-    fprintf(list_out, "<div style=\"white-space: pre-wrap; font-family: monospace;\">");
+    assert(list->debug_info.dump.file != NULL);
 
-    fprintf(list_out, "\t<br><strong>Node:</strong>  |");
+    fprintf(list->debug_info.dump.file, "<div style=\"white-space: pre;"
+            "overflow-x: auto; font-family: monospace;\">");
+
+    fprintf(list->debug_info.dump.file, "\t<div><strong>Size:</strong> %d</div>",
+            list->size);
+    fprintf(list->debug_info.dump.file, "\t<div><strong>Capacity:</strong> %d</div>",
+            list->capacity);
+    fprintf(list->debug_info.dump.file, "\t<br><strong>Node:</strong>  |");
     for (int index = 0; index < list->capacity; index++)
-        fprintf(list_out, " %11d |", index);
+        fprintf(list->debug_info.dump.file, " %11d |", index);
 
-    fprintf(list_out, "\n\t<br><strong>next:</strong>  |");
+    fprintf(list->debug_info.dump.file, "\n\t<br><strong>next:</strong>  |");
     for (int index = 0; index < list->capacity; index++)
-        fprintf(list_out, " %11d |", list->storage[index].next);
+        fprintf(list->debug_info.dump.file, " %11d |", list->storage[index].next);
 
-    fprintf(list_out, "\n\t<br><strong>value:</strong> |");
+    fprintf(list->debug_info.dump.file, "\n\t<br><strong>value:</strong> |");
     for (int index = 0; index < list->capacity; index++) {
         if (index == 0)
-            fprintf(list_out, "     FICTIVE |");
+            fprintf(list->debug_info.dump.file, "     FICTIVE |");
         else if (list->storage[index].value == LIST_POISON_VALUE)
-            fprintf(list_out, "      POISON |");
+            fprintf(list->debug_info.dump.file, "      POISON |");
         else
-            fprintf(list_out, " %11d |", list->storage[index].value);
+            fprintf(list->debug_info.dump.file, " %11d |", list->storage[index].value);
     }
 
-    fprintf(list_out, "\n\t<br><strong>prev:</strong>  |"); 
+    fprintf(list->debug_info.dump.file, "\n\t<br><strong>prev:</strong>  |"); 
     for (int index = 0; index < list->capacity; index++)
-        fprintf(list_out, " %11d |", list->storage[index].prev);
-    fprintf(list_out, "\n<br>");
+        fprintf(list->debug_info.dump.file, " %11d |", list->storage[index].prev);
+    fprintf(list->debug_info.dump.file, "\n<br>");
 
-    fprintf(list_out, "</div>\n");
+    fprintf(list->debug_info.dump.file, "</div>\n");
 }
 
 
-static void createHtmlDump(List* list, const char* list_file,
-                           DumpInfo* info, const char* image)
+static void createHtmlDump(List* list, DumpInfo* info, const char* image)
 {
     assert(list != NULL);
-    assert(list_file != NULL);
     assert(info != NULL);
-    assert(info->source_file != NULL);
-    assert(info->function_name != NULL);
+    assert(info->file != NULL);
+    assert(info->function != NULL);
+    assert(list->debug_info.dump.file != NULL);
     assert(image != NULL);
 
-    FILE* list_out = NULL;
-    if (info->dump_counter == 1)
-        list_out = fopen(list_file, "w");
-    else
-        list_out = fopen(list_file, "a");
-    assert(list_out != NULL);
+    fprintf(list->debug_info.dump.file, "<!DOCTYPE html>\n");
+    fprintf(list->debug_info.dump.file, "<html>\n");
+    fprintf(list->debug_info.dump.file, "<style>\n");
+    fprintf(list->debug_info.dump.file, "body { font-family: monospace; }\n");
+    fprintf(list->debug_info.dump.file, "</style>\n");
+    fprintf(list->debug_info.dump.file, "<body>\n");
 
-    fprintf(list_out, "<!DOCTYPE html>\n");
-    fprintf(list_out, "<html>\n");
-    fprintf(list_out, "<style>\n");
-    fprintf(list_out, "body { font-family: monospace; }\n");
-    fprintf(list_out, "</style>\n");
-    fprintf(list_out, "<body>\n");
+    writeListInfo(list, info);
+    writeListData(list);
 
-    writeListInfo(list, info, list_out);
-    writeListData(list, list_out);
-    fprintf(list_out, "<img src=\"\n%s\" height=140px>\n", image);
+    fprintf(list->debug_info.dump.file, "<div style=\"overflow-x: auto; white-space: nowrap;\">\n");
+    fprintf(list->debug_info.dump.file, "<img src=\"list_graph_%03d.svg\" "
+            "style=\"zoom:0.65; -moz-transform:scale(0.1); -moz-transform-origin:top left;\">\n",
+            list->debug_info.dump.image_counter);
+    fprintf(list->debug_info.dump.file, "</div>\n");
 
-    fprintf(list_out, "<hr style=\"margin: 40px 0; border: 2px solid #ccc;\">\n");
-    fprintf(list_out, "</body>\n");
-    fprintf(list_out, "</html>\n");
-
-    assert(fclose(list_out) == 0);
+    fprintf(list->debug_info.dump.file, "<hr style=\"margin: 40px 0; border: 2px solid #ccc;\">\n");
+    fprintf(list->debug_info.dump.file, "</body>\n");
+    fprintf(list->debug_info.dump.file, "</html>\n");
 }
 
 
-void listDump(List* list, const char* filename,
-              const char* function_name, int line_number)
+void listDump(List* list, const char* file, const char* function, int line)
 {
     assert(list != NULL);
     assert(list->storage != NULL);
-    assert(filename != NULL);
-    assert(function_name != NULL);
+    assert(list->debug_info.dump.file != NULL);
+    assert(file != NULL);
+    assert(function != NULL);
 
-    static int dump_counter = 1;
-
-    DumpInfo info = {filename, function_name, line_number, dump_counter};
-    char graph_dot_file[BUFFER_SIZE] = {};
-    char graph_svg_file[BUFFER_SIZE] = {};
-    char list_file[BUFFER_SIZE] = {};
-    snprintf(graph_dot_file, BUFFER_SIZE, "%s/graph_dump_%03d.dot", IMAGE_DIRECTORY, dump_counter);
-    snprintf(graph_svg_file, BUFFER_SIZE, "%s/graph_dump_%03d.svg", IMAGE_DIRECTORY, dump_counter);
-    snprintf(list_file, BUFFER_SIZE, "list_dump.html");
+    DumpInfo info = {file, function, line};
+    char graph_dot_file[BUFFER_SIZE * 2] = {};
+    char graph_svg_file[BUFFER_SIZE * 2] = {};
+   
+    snprintf(graph_dot_file, BUFFER_SIZE * 2, "%s/list_graph_%03d.dot",
+             list->debug_info.dump.directory, list->debug_info.dump.image_counter);
+    snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/list_graph_%03d.svg",
+             list->debug_info.dump.directory, list->debug_info.dump.image_counter);
 
     generateGraph(list, graph_dot_file);
     convertDotToSvg(graph_dot_file, graph_svg_file); 
 
-    char command[BUFFER_SIZE + 10] = {};
-    snprintf(command, BUFFER_SIZE + 10, "rm %s", graph_dot_file);
-    //system(command);
+    char command[BUFFER_SIZE * 3] = {};
+    snprintf(command, BUFFER_SIZE * 3, "rm %s", graph_dot_file);
+    system(command);
    
-    createHtmlDump(list, list_file, &info, graph_svg_file);
+    createHtmlDump(list, &info, graph_svg_file);
 
-    dump_counter++;
+    list->debug_info.dump.image_counter++;
 }

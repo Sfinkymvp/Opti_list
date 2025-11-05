@@ -6,10 +6,19 @@ const int EMPTY = -1;
 const int START_CAPACITY = 4;
 
 
+extern const char* IMAGE_DIRECTORY;
+
+
+const int BUFFER_SIZE = 256;
+
+
 #ifdef DEBUG
 
-#define LIST_INIT(name) List name = {.debug_info = \
-                        {#name, __FILE__, __func__, __LINE__}};
+#define LIST_INIT(name)                                \
+    List name = {};                                    \
+    name.debug_info.creation = (ListCreationInfo){     \
+        #name, __FILE__, __func__, __LINE__            \
+    };
 
 
 #define LIST_DUMP(name)                                    \
@@ -43,7 +52,8 @@ typedef enum {
     LIST_OK = 0,
     LIST_CORRUPTED,
     LIST_INVALID_INDEX,
-    LIST_OUT_OF_MEMORY
+    LIST_OUT_OF_MEMORY,
+    LIST_ERR_FILE_OPEN
 } ListStatus;
 
 
@@ -54,19 +64,34 @@ const DataType LIST_FICTIVE_VALUE = 0xAB0BA228;
 
 
 #ifdef DEBUG
+
+
 typedef struct {
     const char* list_name;
-    const char* source_file;
-    const char* function_name;
-    int line_number;
+    const char* file;
+    const char* function;
+    int line;
+} ListCreationInfo;
+
+
+typedef struct {
+    FILE* file;
+    char directory[BUFFER_SIZE];
+    int image_counter;
+    int dump_counter;
+} ListDumpState;
+
+
+typedef struct {
+    ListCreationInfo creation;
+    ListDumpState dump;
 } ListDebugInfo;
 
 
 typedef struct {
-    const char* source_file;
-    const char* function_name;
-    int line_number;
-    int dump_counter;
+    const char* file;
+    const char* function;
+    int line;
 } DumpInfo;
 #endif // DEBUG
 
@@ -81,6 +106,7 @@ typedef struct {
 typedef struct {
     Node* storage;
     int capacity;
+    int size;
     int free_head;
 #ifdef DEBUG
     ListDebugInfo debug_info;
