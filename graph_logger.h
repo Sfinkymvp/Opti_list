@@ -5,8 +5,8 @@
 #include "data.h"
 
 
-void listDump(List* list, const char* filename,
-              const char* function_name, int line_number);
+void listDump(List* list, const char* message, ListStatus status,
+              const char* file, const char* function, int line);
 
-
+             
 #endif // _GRAPH_LOGGER_H_

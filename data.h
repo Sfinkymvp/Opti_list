@@ -21,39 +21,39 @@ const int BUFFER_SIZE = 256;
     };
 
 
-#define LIST_DUMP(name)                                    \
-    do {                                                   \
-        listDump(name, __FILE__, __func__, __LINE__);      \
-    } while (0)
- 
 #endif // DEBUG
 
 
-#define CHECK_STATUS(function_call)               \
-    do {                                          \
-        ListStatus _status = function_call;       \
-        if (_status != LIST_OK)                   \
-            return _status;                       \
+#define CHECK_STATUS(function_call)                \
+    do {                                           \
+        ListStatus _status = function_call;        \
+        if (_status != LIST_OK)                    \
+            return _status;                        \
     } while (0)
 
 
-#define CHECK_OR_RETURN(function_call, list_ptr)  \
-    do {                                          \
-        ListStatus _status = function_call;       \
-        if (_status != LIST_OK) {                 \
-            fprintf(stderr, "Error!\n");          \
-            listDestructor(list_ptr);             \
-            return _status;                       \
-        }                                         \
+#define CHECK_OR_RETURN(function_call, list)       \
+    do {                                           \
+        ListStatus __status = function_call;       \
+        if (__status != LIST_OK) {                 \
+            listDestructor(list);                  \
+            return __status;                       \
+        }                                          \
     } while (0)
 
 
 typedef enum {
     LIST_OK = 0,
-    LIST_CORRUPTED,
-    LIST_INVALID_INDEX,
-    LIST_OUT_OF_MEMORY,
-    LIST_ERR_FILE_OPEN
+    LIST_CAPACITY_INVALID,
+    LIST_FREE_HEAD_INVALID,
+    LIST_ZERO_NODE_CORRUPTED,
+    LIST_LOOP_DETECTED,
+    LIST_INDEX_OUT_OF_BOUNDS,
+    LIST_FREE_NODE_MIXED,
+    LIST_ERR_PREV_NEXT,
+    LIST_SIZE_INVALID,
+    LIST_FREE_STRUCTURE_BROKEN,
+    LIST_VALUE_INVALID
 } ListStatus;
 
 
@@ -89,6 +89,8 @@ typedef struct {
 
 
 typedef struct {
+    const char* message;
+    ListStatus status;
     const char* file;
     const char* function;
     int line;

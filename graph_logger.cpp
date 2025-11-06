@@ -25,7 +25,7 @@ static void generateNodes(List* list, FILE* graph_out)
 
     fprintf(graph_out, "\tnode_0[shape=\"Mrecord\",style=filled,fontname=\"Monospace\","
                        "fillcolor=\"#FFF9C4\",color=\"#E3DC95\",penwidth=2.0,label="
-                       "\"head = %d | tail = %d | free_head = %d\"];\n",
+                       "\"head = %d | tail = %d | free head = %d\"];\n",
                        list->storage[0].next, list->storage[0].prev, list->free_head);
 
     for (int index = 1; index < list->capacity; index++) {
@@ -62,54 +62,54 @@ static void connectNodes(List* list, FILE* graph_out)
     assert(list->storage != NULL);
     assert(graph_out != NULL);
 
-    fprintf(graph_out, "edge[style=\"invis\"]\n");
+    // Невидимые стрелки
+    fprintf(graph_out, "\tedge[style=\"invis\"]\n");
     for (int index = 0; index < list->capacity - 1; index++)
         fprintf(graph_out, "\tnode_%d->node_%d;\n", index, index + 1);
     fprintf(graph_out, "\tedge[style=\"solid\",constraint=false]\n");
- 
+
+    // Заголовки
     fprintf(graph_out, "\t{rank=same;head->node_%d[color=black];}\n", list->storage[0].next);
     fprintf(graph_out, "\t{rank=same;tail->node_%d[color=black];}\n", list->storage[0].prev);
-    fprintf(graph_out, "\t{rank=same;free_head->node_%d[color=black];}\n", list->free_head);
+    if (list->free_head != EMPTY)
+        fprintf(graph_out, "\t{rank=same;free_head->node_%d[color=black];}\n", list->free_head);
 
     int error_index = 1000;
-
-    for (int index = list->storage[0].next, count = 0; !(count >= list->capacity ||
-         index < 0 || index >= list->capacity) && list->storage[index].next != 0;
-         index = list->storage[index].next, count++) {
-        if (index == 0)
-            continue;
-        if (list->storage[index].prev < 0 || list->storage[index].prev >= list->capacity) {
-            fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
-                               "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
-                               error_index, list->storage[index].next);
-            fprintf(graph_out, "\tnode_%d->node_%d[color=\"#01579B\"];\n",
-                               index, error_index);
-            error_index++;
+    for (int index = list->storage[0].next, count = 0; count < list->capacity &&
+         index >= 0 && index < list->capacity; index = list->storage[index].next, count++) {
+        if (list->storage[index].next >= 0 && list->storage[index].next < list->capacity) {
+            if (list->storage[list->storage[index].next].prev != index) {
+                fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
+                                   "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
+                                   error_index, list->storage[list->storage[index].next].prev);
+                fprintf(graph_out, "\tnode_%d->node_%d[color=red4];\n",
+                                   list->storage[index].next, error_index);
+                fprintf(graph_out, "\tnode_%d->node_%d[color=\"#01579B\"];\n",
+                        index, list->storage[index].next);
+                error_index++;
+            }
         }
-        else
-            fprintf(graph_out, "\tnode_%d->node_%d[color=\"#01579B\"];\n",
-                index, list->storage[index].next);
-    }
-    fprintf(graph_out, "\n");
-    
-    for (int index = list->storage[0].next, count = 0; 
-         !(count >= list->capacity || index < 0 || index >= list->capacity) && index != 0;
-         index = list->storage[index].next, count++) {
-        if (list->storage[index].prev == 0)
-            continue;
-        if (list->storage[index].prev < 0 || list->storage[index].prev >= list->capacity) {
-            fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
-                               "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
-                               error_index, list->storage[index].prev);
-            fprintf(graph_out, "\tnode_%d->node_%d[color=red4];\n",
-                               index, error_index);
-            error_index++;
-        } else
-            fprintf(graph_out, "\tnode_%d->node_%d[color=red4];\n",
-                               index, list->storage[index].prev);
+        if (index == 0)
+            break;
     }
     fprintf(graph_out, "\n");
 
+    // Создает черные двусторонние стрелочки 
+    for (int index = list->storage[0].next, count = 0; count < list->capacity &&
+        index >= 0 && index < list->capacity; index = list->storage[index].next, count++) {
+        if (list->storage[index].prev >= 0 && list->storage[index].prev < list->capacity &&
+            list->storage[list->storage[index].prev].next == index)
+            fprintf(graph_out, "\tnode_%d->node_%d[dir=both, constraint=false, color=black];\n",
+                    list->storage[index].prev, index);
+        if (index == 0 || list->storage[index].next == 0 && list->storage[index].prev == 0)
+            break;
+    }
+    
+    fprintf(graph_out, "node_666[style=invis];\n");
+    fprintf(graph_out, "node_3->node_666[style=invis];\n");
+
+    if (list->free_head == EMPTY)
+        return;
     for (int index = list->free_head, count = 0; !(count >= list->capacity ||
          (index < 0 && index != EMPTY) || index >= list->capacity) &&
          list->storage[index].next != EMPTY;  index = list->storage[index].next, count++) {
@@ -124,7 +124,6 @@ static void connectNodes(List* list, FILE* graph_out)
             fprintf(graph_out, "\tnode_%d->node_%d[color=\"#2E7D32\"];\n",
                 index, list->storage[index].next);
     }
-
     fprintf(graph_out, "\n");
 } 
 
@@ -139,7 +138,7 @@ static void generateGraph(List* list, const char* dot_file)
 
     fprintf(graph_out, "digraph G {\n");
     fprintf(graph_out, "\trankdir=LR\n");
-    fprintf(graph_out, "\tsplines=ortho\n");
+    fprintf(graph_out, "\tgraph[splines=ortho]\n");
 
     generateNodes(list, graph_out);
 
@@ -164,10 +163,31 @@ static void convertDotToSvg(const char* dot_file, const char* svg_file)
 }
 
 
+static const char* getErrorMessage(ListStatus status)
+{
+    switch (status) {
+        case LIST_OK:                    return "[LIST_OK] List structure is valid";
+        case LIST_CAPACITY_INVALID:      return "[LIST_CAPACITY_INVALID] Invalid list capacity (capacity < 0)";
+        case LIST_FREE_HEAD_INVALID:     return "[LIST_FREE_HEAD_INVALID] free_head index is invalid";
+        case LIST_ZERO_NODE_CORRUPTED:   return "[LIST_ZERO_NODE_CORRUPTED] "
+                                                "Zero node [0] corrupted or has wrong fictive value";
+        case LIST_LOOP_DETECTED:         return "[LIST_LOOP_DETECTED] Loop detected in list traversal";
+        case LIST_INDEX_OUT_OF_BOUNDS:   return "[LIST_INDEX_OUT_OF_BOUNDS] Node index is out of valid range";
+        case LIST_FREE_NODE_MIXED:       return "[LIST_FREE_NODE_MIXED] Free node found in active list";
+        case LIST_ERR_PREV_NEXT:         return "[LIST_ERR_PREV_NEXT] Invalid prev/next links between nodes";
+        case LIST_SIZE_INVALID:          return "[LIST_SIZE_INVALID] Element count does not match list->size";
+        case LIST_FREE_STRUCTURE_BROKEN: return "[LIST_FREE_STRUCTURE_BROKEN] Free list structure corrupted";
+        case LIST_VALUE_INVALID:         return "[LIST_VALUE_INVALID] Invalid value in list";
+        default: fprintf(stderr, "Unused status in getErrorMessage"); return NULL;
+    }
+}
+
+
 static void writeListInfo(List* list, DumpInfo* info)
 {
     assert(list != NULL);
     assert(info != NULL);
+    assert(info->message != NULL);
     assert(info->file != NULL);
     assert(info->function != NULL);
     assert(list->debug_info.dump.file != NULL);
@@ -178,6 +198,8 @@ static void writeListInfo(List* list, DumpInfo* info)
     fprintf(list->debug_info.dump.file, "\t<h2>List \"%s\" {%s:%d} created in %s()</h2>\n",
             list->debug_info.creation.list_name, list->debug_info.creation.file, 
             list->debug_info.creation.line, list->debug_info.creation.function);
+    fprintf(list->debug_info.dump.file, "\t<h3>ERROR:   %s</h3>\n", getErrorMessage(info->status));
+    fprintf(list->debug_info.dump.file, "\t<h3>MESSAGE: %s</h3>\n", info->message);
 }
 
 
@@ -225,6 +247,7 @@ static void createHtmlDump(List* list, DumpInfo* info, const char* image)
 {
     assert(list != NULL);
     assert(info != NULL);
+    assert(info->message != NULL);
     assert(info->file != NULL);
     assert(info->function != NULL);
     assert(list->debug_info.dump.file != NULL);
@@ -252,15 +275,17 @@ static void createHtmlDump(List* list, DumpInfo* info, const char* image)
 }
 
 
-void listDump(List* list, const char* file, const char* function, int line)
+void listDump(List* list, const char* message, ListStatus status, 
+              const char* file, const char* function, int line)
 {
     assert(list != NULL);
     assert(list->storage != NULL);
     assert(list->debug_info.dump.file != NULL);
+    assert(message != NULL);
     assert(file != NULL);
     assert(function != NULL);
 
-    DumpInfo info = {file, function, line};
+    DumpInfo info = {message, status, file, function, line};
     char graph_dot_file[BUFFER_SIZE * 2] = {};
     char graph_svg_file[BUFFER_SIZE * 2] = {};
    
@@ -274,9 +299,10 @@ void listDump(List* list, const char* file, const char* function, int line)
 
     char command[BUFFER_SIZE * 3] = {};
     snprintf(command, BUFFER_SIZE * 3, "rm %s", graph_dot_file);
-    system(command);
+    //system(command);
    
     createHtmlDump(list, &info, graph_svg_file);
 
     list->debug_info.dump.image_counter++;
 }
+
