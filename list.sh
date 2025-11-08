@@ -1,4 +1,4 @@
-FLAGS="-ggdb3 -std=c++17 -DDEBUG -O0 \
+FLAGS="-ggdb3 -std=c++17 -O0 \
 	-Wall -Wextra -Weffc++ -Waggressive-loop-optimizations -Wc++14-compat \
 	-Wmissing-declarations -Wcast-align -Wcast-qual -Wchar-subscripts \
 	-Wconditionally-supported -Wconversion -Wctor-dtor-privacy \
@@ -17,6 +17,6 @@ FLAGS="-ggdb3 -std=c++17 -DDEBUG -O0 \
 	-Wlarger-than=32768 -Wstack-usage=8192 -pie -fPIE -Werror=vla \
 	-fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr"
 
-FILES="main.cpp list.cpp graph_logger.cpp"
+FILES="main.cpp list.cpp graph_generator.cpp html_dump.cpp list_test.cpp"
 
 g++ $FILES -DDEBUG -o list

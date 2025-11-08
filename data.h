@@ -7,21 +7,10 @@ const int START_CAPACITY = 4;
 
 
 extern const char* IMAGE_DIRECTORY;
+extern const char* error_messages[];
 
 
 const int BUFFER_SIZE = 256;
-
-
-#ifdef DEBUG
-
-#define LIST_INIT(name)                                \
-    List name = {};                                    \
-    name.debug_info.creation = (ListCreationInfo){     \
-        #name, __FILE__, __func__, __LINE__            \
-    };
-
-
-#endif // DEBUG
 
 
 #define CHECK_STATUS(function_call)                \
@@ -53,7 +42,9 @@ typedef enum {
     LIST_ERR_PREV_NEXT,
     LIST_SIZE_INVALID,
     LIST_FREE_STRUCTURE_BROKEN,
-    LIST_VALUE_INVALID
+    LIST_VALUE_INVALID,
+    LIST_OUT_OF_MEMORY,
+    LIST_ERR_DUMP_FILE_OPEN
 } ListStatus;
 
 
@@ -89,7 +80,7 @@ typedef struct {
 
 
 typedef struct {
-    const char* message;
+    char* message;
     ListStatus status;
     const char* file;
     const char* function;
@@ -111,7 +102,7 @@ typedef struct {
     int size;
     int free_head;
 #ifdef DEBUG
-    ListDebugInfo debug_info;
+    ListDebugInfo debug;
 #endif // DEBUG
 } List;
 
