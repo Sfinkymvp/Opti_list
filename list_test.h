@@ -5,4 +5,7 @@
 int listTestPrevLinkError();
 
 
+int listTest50Calls();
+
+
 #endif // _LIST_TEST_H_

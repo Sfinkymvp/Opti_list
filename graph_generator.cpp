@@ -70,9 +70,9 @@ static void connectNodes(List* list, FILE* graph_out)
                 fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
                                    "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
                                    error_index, list->storage[list->storage[index].next].prev);
-                fprintf(graph_out, "\tnode_%d->node_%d[color=red4];\n",
+                fprintf(graph_out, "\tnode_%d->node_%d[color=red4, penwidth=2.5];\n",
                                    list->storage[index].next, error_index);
-                fprintf(graph_out, "\tnode_%d->node_%d[color=\"#01579B\"];\n",
+                fprintf(graph_out, "\tnode_%d->node_%d[color=\"#01579B\", penwidth=2.5];\n",
                         index, list->storage[index].next);
                 error_index++;
             }
@@ -121,6 +121,7 @@ void generateGraph(List* list, const char* dot_file)
     fprintf(graph_out, "digraph G {\n");
     fprintf(graph_out, "\trankdir=LR\n");
     fprintf(graph_out, "\tgraph[splines=ortho]\n");
+    fprintf(graph_out, "\tnodesep=0.7;\n");
 
     generateNodes(list, graph_out);
 

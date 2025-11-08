@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #include "list_test.h"
@@ -8,8 +9,8 @@
 int listTestPrevLinkError()
 {
     LIST_INIT(list);
-
     CHECK_OR_RETURN(listConstructor(&list), &list);
+
     CHECK_OR_RETURN(listInsertAfter(&list, 0, 52), &list);
     CHECK_OR_RETURN(listInsertBefore(&list, 1, 42), &list);
     CHECK_OR_RETURN(listInsertBefore(&list, 2, 11), &list);
@@ -26,7 +27,28 @@ int listTestPrevLinkError()
     list.storage[4].prev = -120;
     
     LIST_VERIFY(&list, "Final dump");
+    listDestructor(&list);
+    return 0;
+}
 
+
+int listTest50Calls()
+{
+    LIST_INIT(list);
+    CHECK_OR_RETURN(listConstructor(&list), &list);
+    
+    CHECK_OR_RETURN(listInsertAfter(&list, 0, 1), &list);
+    CHECK_OR_RETURN(listInsertAfter(&list, 1, 234), &list);
+    CHECK_OR_RETURN(listInsertBefore(&list, 1, 753), &list);
+    CHECK_OR_RETURN(listDelete(&list, 2), &list);
+    CHECK_OR_RETURN(listLinealizer(&list), &list);
+    CHECK_OR_RETURN(listInsertBefore(&list, 2, 344), &list);
+    CHECK_OR_RETURN(listInsertAfter(&list, 0, -123), &list);
+    CHECK_OR_RETURN(listInsertAfter(&list, 3, -894), &list);
+    CHECK_OR_RETURN(listDelete(&list, 1), &list);
+    CHECK_OR_RETURN(listLinealizer(&list), &list);
+
+    LIST_VERIFY(&list, "Final dump");
     listDestructor(&list);
     return 0;
 }
