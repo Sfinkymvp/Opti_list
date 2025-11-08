@@ -207,6 +207,62 @@ ListStatus listResize(List* list)
 }
 
 
+static void listTransfer(List* list, Node* new_storage)
+{
+    assert(list); assert(list->storage);
+
+    int new_index = 1;
+    for (int old_index = list->storage[0].next; old_index != 0;
+         old_index = list->storage[old_index].next, new_index++) {
+        new_storage[new_index].value = list->storage[old_index].value;
+        new_storage[new_index].prev = new_index - 1;
+        if (new_index == list->size)
+            new_storage[new_index].next = 0;
+        else
+            new_storage[new_index].next = new_index + 1;
+    }
+
+    for (int old_index = list->free_head; old_index != EMPTY;
+         old_index = list->storage[old_index].next, new_index++) {
+        new_storage[new_index].value = list->storage[old_index].value;
+        new_storage[new_index].prev = EMPTY;
+        if (list->storage[old_index].next == EMPTY)
+            new_storage[new_index].next = EMPTY;
+        else
+            new_storage[new_index].next = new_index + 1;
+    }
+}
+
+
+ListStatus listLinealizer(List* list)
+{
+    LIST_VERIFY(list, "Before list linearization");
+
+    Node* new_storage = (Node*)calloc(list->capacity, sizeof(Node));
+    if (new_storage == NULL)
+        return LIST_OUT_OF_MEMORY;
+
+    listTransfer(list, new_storage); 
+
+    list->free_head = list->size + 1;
+    new_storage[0].value = list->storage[0].value;
+    if (list->size == 0) {
+        new_storage[0].prev = 0;
+        new_storage[0].next = 0;
+    } else {
+        new_storage[0].prev = list->size;
+        new_storage[0].next = 1; 
+    }
+
+    free(list->storage);
+    list->storage = new_storage;
+
+    LIST_VERIFY(list, "After list linearization");
+
+    return LIST_OK;
+}
+
+
 #ifdef DEBUG
 static ListStatus openGraphDumpFile(List* list)
 {
@@ -239,7 +295,7 @@ ListStatus listConstructor(List* list)
 
     void* temp = calloc(START_CAPACITY, sizeof(Node));
     if (temp == NULL)
-        return LIST_CAPACITY_INVALID;
+        return LIST_OUT_OF_MEMORY;
 
 #ifdef DEBUG
     static int dump_counter = 1;

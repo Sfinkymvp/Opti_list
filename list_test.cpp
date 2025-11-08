@@ -20,6 +20,7 @@ int listTestPrevLinkError()
     CHECK_OR_RETURN(listDelete(&list, 5), &list);
     CHECK_OR_RETURN(listInsertBefore(&list, 4, 1773), &list);
     CHECK_OR_RETURN(listInsertAfter(&list, 4, 112), &list);
+    CHECK_OR_RETURN(listLinealizer(&list), &list);
     CHECK_OR_RETURN(listInsertBefore(&list, 1, 322), &list);
     list.storage[2].prev = 4234;
     list.storage[4].prev = -120;

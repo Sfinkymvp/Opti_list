@@ -49,6 +49,9 @@ ListStatus listDelete(List* list, int index);
 ListStatus listResize(List* list);
 
 
+ListStatus listLinealizer(List* list);
+
+
 ListStatus listConstructor(List* list);
 
 
