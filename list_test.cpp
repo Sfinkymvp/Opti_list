@@ -6,7 +6,7 @@
 #include "list.h"
 
 
-int listTestPrevLinkError()
+int listTest1()
 {
     LIST_INIT(list);
     CHECK_OR_RETURN(listConstructor(&list), &list);
@@ -23,8 +23,8 @@ int listTestPrevLinkError()
     CHECK_OR_RETURN(listInsertAfter(&list, 4, 112), &list);
     CHECK_OR_RETURN(listLinealizer(&list), &list);
     CHECK_OR_RETURN(listInsertBefore(&list, 1, 322), &list);
-    list.storage[2].prev = 4234;
-    list.storage[4].prev = -120;
+    list.storage[2].prev = 155;
+    list.storage[4].next = -120;
     
     LIST_VERIFY(&list, "Final dump");
     listDestructor(&list);
@@ -32,7 +32,7 @@ int listTestPrevLinkError()
 }
 
 
-int listTest50Calls()
+int listTest2()
 {
     LIST_INIT(list);
     CHECK_OR_RETURN(listConstructor(&list), &list);
@@ -47,6 +47,8 @@ int listTest50Calls()
     CHECK_OR_RETURN(listInsertAfter(&list, 3, -894), &list);
     CHECK_OR_RETURN(listDelete(&list, 1), &list);
     CHECK_OR_RETURN(listLinealizer(&list), &list);
+    list.storage[3].next = -125;
+    list.storage[1].prev = -324;
 
     LIST_VERIFY(&list, "Final dump");
     listDestructor(&list);

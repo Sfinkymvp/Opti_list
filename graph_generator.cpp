@@ -63,22 +63,53 @@ static void connectNodes(List* list, FILE* graph_out)
         fprintf(graph_out, "\t{rank=same;free_head->node_%d[color=black];}\n", list->free_head);
 
     int error_index = 1000;
-    for (int index = list->storage[0].next, count = 0; count < list->capacity &&
+    for (int index = 0, count = 0; count < list->capacity &&
          index >= 0 && index < list->capacity; index = list->storage[index].next, count++) {
         if (list->storage[index].next >= 0 && list->storage[index].next < list->capacity) {
             if (list->storage[list->storage[index].next].prev != index) {
-                fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
-                                   "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
-                                   error_index, list->storage[list->storage[index].next].prev);
-                fprintf(graph_out, "\tnode_%d->node_%d[color=red4, penwidth=2.5];\n",
-                                   list->storage[index].next, error_index);
-                fprintf(graph_out, "\tnode_%d->node_%d[color=\"#01579B\", penwidth=2.5];\n",
+                if (list->storage[list->storage[index].next].prev < 0 ||
+                    list->storage[list->storage[index].next].prev >= list->capacity) {
+                    fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
+                                       "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
+                                       error_index, list->storage[list->storage[index].next].prev);
+                    fprintf(graph_out, "\tnode_%d->node_%d[color=brown1, penwidth=3];\n",
+                                       error_index, list->storage[index].next);
+                    error_index++;
+                } else {
+                    fprintf(graph_out, "\tnode_%d->node_%d[color=brown1, penwidth=3];\n",
+                                       list->storage[list->storage[index].next].prev,
+                                       list->storage[index].next);
+                }
+
+                fprintf(graph_out, "\tnode_%d->node_%d[color=brown1, penwidth=3];\n",
                         index, list->storage[index].next);
-                error_index++;
+            }
+        } else
+            break;
+    }
+
+    for (int index = 0, count = 0; count < list->capacity &&
+         index >= 0 && index < list->capacity; index = list->storage[index].prev, count++) {
+        if (list->storage[index].prev >= 0 && list->storage[index].prev < list->capacity) {
+            if (list->storage[list->storage[index].prev].next != index) {
+                if (list->storage[list->storage[index].prev].next < 0 ||
+                    list->storage[list->storage[index].prev].next >= list->capacity) {
+                    fprintf(graph_out, "\tnode_%d[shape=\"octagon\",fontname=\"Monospace\",fillcolor=brown1,"
+                                       "color=red4,penwidth=2.0,style=filled,label=\"%d\"];\n", 
+                                       error_index, list->storage[list->storage[index].prev].next);
+                    fprintf(graph_out, "\tnode_%d->node_%d[color=brown2, penwidth=3];\n",
+                                       list->storage[index].prev, error_index);
+                    error_index++;
+                } else {
+                    fprintf(graph_out, "\tnode_%d->node_%d[color=brown1, penwidth=3];\n",
+                                       list->storage[index].prev,
+                                       list->storage[list->storage[index].prev].next);
+                }
+
+                fprintf(graph_out, "\tnode_%d->node_%d[color=brown1, penwidth=3];\n",
+                        list->storage[index].prev, index);
             }
         }
-        if (index == 0)
-            break;
     }
     fprintf(graph_out, "\n");
 
@@ -88,7 +119,7 @@ static void connectNodes(List* list, FILE* graph_out)
             list->storage[list->storage[index].prev].next == index)
             fprintf(graph_out, "\tnode_%d->node_%d[dir=both, constraint=false, color=black];\n",
                     list->storage[index].prev, index);
-        if (index == 0 || list->storage[index].next == 0 && list->storage[index].prev == 0)
+        if (index == 0 || (list->storage[index].next == 0 && list->storage[index].prev == 0))
             break;
     }
     

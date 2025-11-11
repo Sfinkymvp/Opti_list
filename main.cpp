@@ -8,10 +8,9 @@
 
 int main()
 {
-    listTestPrevLinkError();
+    listTest1();
 
-    listTest50Calls();
-
+    listTest2();
 
     return 0;
 }

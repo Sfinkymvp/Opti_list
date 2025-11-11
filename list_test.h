@@ -2,10 +2,10 @@
 #define _LIST_TEST_H_
 
 
-int listTestPrevLinkError();
+int listTest1();
 
 
-int listTest50Calls();
+int listTest2();
 
 
 #endif // _LIST_TEST_H_
